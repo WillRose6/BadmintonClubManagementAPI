@@ -1,0 +1,13 @@
+# .NET / Visual Studio / Rider builds and caches
+[Oo]bj/
+[Bb]in/
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Operating System files
+.DS_Store
+Thumbs.db
