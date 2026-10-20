@@ -1,0 +1,37 @@
+@BadmintonClubAPI_HostAddress = http://localhost:5066
+
+GET {{BadmintonClubAPI_HostAddress}}/api/Players
+Accept: application/json
+
+###
+
+GET {{BadmintonClubAPI_HostAddress}}/api/Players/1
+
+###
+
+POST {{BadmintonClubAPI_HostAddress}}/api/Players
+Content-Type: application/json
+
+{
+    "firstName": "Will",
+    "surname": "Rose",
+    "emailAddress": "will.rose231231@gmail.com",
+    "dateOfBirth": "2000-05-15T00:00:00Z",
+    "password": "Password123!"
+}
+
+###
+
+PUT {{BadmintonClubAPI_HostAddress}}/api/Players/13
+Content-Type: application/json
+
+{
+    "emailAddress": "will.newemail@example.com"
+}
+
+###
+
+DELETE {{BadmintonClubAPI_HostAddress}}/api/Players/13
+Content-Type: application/json
+
+###
