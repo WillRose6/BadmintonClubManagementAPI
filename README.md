@@ -12,11 +12,8 @@ A RESTful backend API built with C# and ASP.NET Core designed to manage badminto
 ## Features
 
 * Player Management: CRUD operations for club members.
-* Court Bookings: Schedule and manage court allocations.
+* Court And Match Bookings: Schedule and manage court allocations.
 * Unit Testing: Validated core application logic using xUnit.
-
-## Upcoming Features
-
 * League Rankings: Track player standings and match results.
 * JWT Authentication for secure endpoints
 * FluentValidation for incoming request payloads
