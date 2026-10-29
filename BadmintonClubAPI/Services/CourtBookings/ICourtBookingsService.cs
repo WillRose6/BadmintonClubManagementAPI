@@ -19,6 +19,7 @@ public interface ICourtBookingsService
     Task<IEnumerable<BookingResponseDto>> GetBookingsByCourtIdAsync(int id);
     Task<IEnumerable<BookingResponseDto>> GetBookingsByPlayerIdAsync(int id);
     Task<BookingResponseDto?> GetBookingByIdAsync(int id);
-    Task<BookingResponseDto?> CreateBookingAsync(CreateBookingDto bookingDto);
+    Task<(CourtBookingResult Result, BookingResponseDto? Booking)> CreateBookingAsync(CreateBookingDto bookingDto);
+    Task<(CourtBookingResult Result, BookingResponseDto? Booking)> UpdateBookingAsync(int id, UpdateBookingDto updateBookingDto);
     Task<bool> CancelBookingAsync(int id);
 }

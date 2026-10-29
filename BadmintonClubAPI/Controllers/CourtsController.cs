@@ -1,5 +1,6 @@
 using BadmintonClubAPI.Models.DTOs.Courts;
 using BadmintonClubAPI.Services.CourtBookings;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BadmintonClubAPI.Controllers;
@@ -29,6 +30,7 @@ public class CourtsController : ControllerBase
         return court == null ? NotFound(new { message = $"Could not find court with id {id}"}) : Ok(court);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreateCourt([FromBody] CreateCourtDto createCourtDto)
     {
@@ -36,13 +38,15 @@ public class CourtsController : ControllerBase
         return CreatedAtAction(nameof(GetCourt), new { id = createdCourtResponse.Id },  createdCourtResponse);
     }
 
-    [HttpPut("{id:int}")]
+    [Authorize]
+    [HttpPatch("{id:int}")]
     public async Task<IActionResult> UpdateCourt(int id, [FromBody] UpdateCourtDto updateCourtDto)
     {
         var court = await _courtBookingService.UpdateCourtAsync(id, updateCourtDto);
         return court == null ? NotFound( new { message = $"Could not find court with id {id}" }) : Ok(court);
     }
 
+    [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteCourt(int id)
     {

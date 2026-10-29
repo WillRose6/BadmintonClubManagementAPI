@@ -1,5 +1,6 @@
 using BadmintonClubAPI.Models.DTOs.Players;
 using BadmintonClubAPI.Services.Players;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BadmintonClubAPI.Controllers;
@@ -26,9 +27,10 @@ public class PlayersController : ControllerBase
     public async Task<IActionResult> GetPlayerById(int id)
     {
         var player = await _playerService.GetPlayerByIdAsync(id);
-        return player == null ? NotFound(new { Message = $"Cannot find player with ID {id}!"}) : Ok(player);
+        return player == null ? NotFound(new { message = $"Cannot find player with ID {id}!"}) : Ok(player);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreatePlayer([FromBody] CreatePlayerDto createPlayerDto)
     {
@@ -36,17 +38,19 @@ public class PlayersController : ControllerBase
         return CreatedAtAction(nameof(GetPlayerById), new { id = createdPlayer.Id }, createdPlayer);
     }
 
-    [HttpPut("{id:int}")]
+    [Authorize]
+    [HttpPatch("{id:int}")]
     public async Task<IActionResult> UpdatePlayer(int id, [FromBody] UpdatePlayerDto updatePlayerDto)
     {
         var player = await _playerService.UpdatePlayerByIdAsync(id, updatePlayerDto);
-        return player == null ? NotFound(new { Message = $"Cannot find player with ID {id}!" }) : Ok(player);
+        return player == null ? NotFound(new { message = $"Cannot find player with ID {id}!" }) : Ok(player);
     }
 
+    [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeletePlayer(int id)
     {
         bool bSuccess = await _playerService.DeletePlayerAsync(id);
-        return !bSuccess ? NotFound(new { Message = $"No player found with id {id}!"}) : NoContent();
+        return !bSuccess ? NotFound(new { message = $"No player found with id {id}!"}) : NoContent();
     }
 }

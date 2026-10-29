@@ -1,5 +1,6 @@
 using BadmintonClubAPI.Models.DTOs.Bookings;
 using BadmintonClubAPI.Services.CourtBookings;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BadmintonClubAPI.Controllers;
@@ -43,18 +44,39 @@ public class BookingsController : ControllerBase
         return Ok(bookings);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto createBookingDto)
     {
-        var booking = await _courtBookingService.CreateBookingAsync(createBookingDto);
-        if (booking == null)
+        var (result, booking) = await _courtBookingService.CreateBookingAsync(createBookingDto);
+
+        return result switch
         {
-            return BadRequest(new { message = $"Could not create booking. It may be inactive or already taken"});
-        }
-        
-        return CreatedAtAction(nameof(GetBookingById), new { id = booking.Id }, booking);
+            CourtBookingResult.Success => CreatedAtAction(nameof(GetBookingById), new { id = booking!.Id }, booking),
+            CourtBookingResult.CourtNotFoundOrInactive => NotFound(new { message = $"Court with ID { createBookingDto.CourtId } not found or was inactive." }),
+            CourtBookingResult.PlayerNotFound => NotFound(new { message = $"Player with ID { createBookingDto.PlayerId } not found." }),
+            CourtBookingResult.Overlap => Conflict(new { message = $"Booking times overlap with existing booking."}),
+            _ => BadRequest()
+        };
     }
 
+    [Authorize]
+    [HttpPatch("{id:int}")]
+    public async Task<IActionResult> UpdateBooking(int id, [FromBody] UpdateBookingDto updateBookingDto)
+    {
+        var (result, booking) = await _courtBookingService.UpdateBookingAsync(id, updateBookingDto);
+
+        return result switch
+        {
+            CourtBookingResult.Success => Ok(booking),
+            CourtBookingResult.BookingNotFound => NotFound(new { message = $"Booking with ID { id } not found." }),
+            CourtBookingResult.CourtNotFoundOrInactive => BadRequest(new { message = $"Court with id { updateBookingDto.CourtId } does not exist or is inactive." }),
+            CourtBookingResult.Overlap => Conflict(new { message = "Booking times overlap with existing booking." }),
+            _ => BadRequest()
+        };
+    }
+
+    [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteBooking(int id)
     {

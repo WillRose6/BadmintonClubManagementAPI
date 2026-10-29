@@ -76,7 +76,7 @@ public class PlayerService : IPlayerService
         }
         
         await _context.SaveChangesAsync();
-        return new PlayerResponseDto(id, player.FirstName, player.Surname, player.EmailAddress, player.DateOfBirth);
+        return new PlayerResponseDto(player.Id, player.FirstName, player.Surname, player.EmailAddress, player.DateOfBirth);
     }
 
     public async Task<bool> DeletePlayerAsync(int id)
@@ -91,5 +91,10 @@ public class PlayerService : IPlayerService
         await _context.SaveChangesAsync();
 
         return true;
+    }
+    
+    public async Task<Player?> GetByEmailAsync(string email)
+    {
+        return await _context.Players.FirstOrDefaultAsync(p => p.EmailAddress == email);
     }
 }

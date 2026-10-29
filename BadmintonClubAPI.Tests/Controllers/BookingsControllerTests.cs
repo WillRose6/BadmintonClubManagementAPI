@@ -60,7 +60,8 @@ public class BookingsControllerTests
         var createDto = new CreateBookingDto(10, 2, DateTime.UtcNow, DateTime.UtcNow.AddHours(1));
         var bookingResponse = new BookingResponseDto(1, 10, 2, createDto.StartDate, createDto.EndDate, DateTime.UtcNow);
 
-        _mockBookingService.Setup(s => s.CreateBookingAsync(createDto)).ReturnsAsync(bookingResponse);
+        _mockBookingService.Setup(s => s.CreateBookingAsync(createDto))
+            .ReturnsAsync((CourtBookingResult.Success, bookingResponse));
         var controller = new BookingsController(_mockBookingService.Object);
 
         var result = await controller.CreateBooking(createDto);
@@ -71,15 +72,17 @@ public class BookingsControllerTests
     }
 
     [Fact]
-    public async Task CreateBooking_WhenFailsOrOverlaps_ShouldReturnBadRequest()
+    public async Task CreateBooking_WhenOverlap_ShouldReturnConflict()
     {
         var createDto = new CreateBookingDto(10, 2, DateTime.UtcNow, DateTime.UtcNow.AddHours(1));
 
-        _mockBookingService.Setup(s => s.CreateBookingAsync(createDto)).ReturnsAsync((BookingResponseDto?)null);
+        _mockBookingService.Setup(s => s.CreateBookingAsync(createDto))
+            .ReturnsAsync((CourtBookingResult.Overlap, null));
         var controller = new BookingsController(_mockBookingService.Object);
 
         var result = await controller.CreateBooking(createDto);
-        Assert.IsType<BadRequestObjectResult>(result);
+
+        Assert.IsType<ConflictObjectResult>(result);
     }
 
     [Fact]

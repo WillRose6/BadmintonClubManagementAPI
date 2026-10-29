@@ -1,3 +1,3 @@
 namespace BadmintonClubAPI.Models.DTOs.Courts;
 
-public record UpdateCourtDto(int? index, bool? isActive);
+public record UpdateCourtDto(int? Index, bool? IsActive);

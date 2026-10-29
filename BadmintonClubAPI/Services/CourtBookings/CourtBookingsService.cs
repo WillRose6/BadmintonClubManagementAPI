@@ -50,14 +50,14 @@ public class CourtBookingsService : ICourtBookingsService
             return null;
         }
 
-        if (courtDto.index.HasValue)
+        if (courtDto.Index.HasValue)
         {
-            court.CourtIndex = courtDto.index.Value;
+            court.CourtIndex = courtDto.Index.Value;
         }
 
-        if (courtDto.isActive.HasValue)
+        if (courtDto.IsActive.HasValue)
         {
-            court.IsActive = courtDto.isActive.Value;
+            court.IsActive = courtDto.IsActive.Value;
         }
         
         await _context.SaveChangesAsync();
@@ -104,24 +104,23 @@ public class CourtBookingsService : ICourtBookingsService
         return new BookingResponseDto(booking.Id, booking.PlayerId, booking.CourtId, booking.StartDate, booking.EndDate, booking.CreatedDate);
     }
 
-    public async Task<BookingResponseDto?> CreateBookingAsync(CreateBookingDto bookingDto)
+    public async Task<(CourtBookingResult Result, BookingResponseDto? Booking)> CreateBookingAsync(CreateBookingDto bookingDto)
     {
         var court = await _context.Courts.FindAsync(bookingDto.CourtId);
         if (court == null || !court.IsActive)
         {
-            return null;
+            return (CourtBookingResult.CourtNotFoundOrInactive, null);
         }
 
         var playerExists = await _context.Players.AnyAsync(p => p.Id == bookingDto.PlayerId);
         if (!playerExists)
         {
-            return null;
+            return (CourtBookingResult.PlayerNotFound , null);
         }
         
-        bool alreadyBooked = await _context.Bookings.AnyAsync(b => b.CourtId == bookingDto.CourtId && bookingDto.StartDate < b.EndDate && bookingDto.EndDate > b.StartDate);
-        if (alreadyBooked)
+        if (await HasOverlappingBooking(bookingDto.CourtId, bookingDto.StartDate, bookingDto.EndDate))
         {
-            return null;
+            return (CourtBookingResult.Overlap, null);
         }
 
         var booking = new Booking(bookingDto.PlayerId, bookingDto.CourtId, bookingDto.StartDate, bookingDto.EndDate);
@@ -129,7 +128,41 @@ public class CourtBookingsService : ICourtBookingsService
         _context.Bookings.Add(booking);
         await _context.SaveChangesAsync();
 
-        return new BookingResponseDto(booking.Id, booking.PlayerId, booking.CourtId, booking.StartDate, booking.EndDate, booking.CreatedDate);
+        var bookingResponseDto = new BookingResponseDto(booking.Id, booking.PlayerId, booking.CourtId, booking.StartDate, booking.EndDate, booking.CreatedDate);
+        return (CourtBookingResult.Success, bookingResponseDto);
+    }
+    
+    public async Task<(CourtBookingResult Result, BookingResponseDto? Booking)> UpdateBookingAsync(int id, UpdateBookingDto bookingDto)
+    {
+        var booking = await _context.Bookings.FindAsync(id);
+        if (booking == null)
+        {
+            return (CourtBookingResult.BookingNotFound, null);
+        }
+
+        int targetCourtId = bookingDto.CourtId ?? booking.CourtId;
+        DateTime targetStartDate = bookingDto.StartDate ?? booking.StartDate;
+        DateTime targetEndDate = bookingDto.EndDate ?? booking.EndDate;
+
+        var court = await _context.Courts.FindAsync(targetCourtId);
+        if (court == null || !court.IsActive)
+        {
+            return (CourtBookingResult.CourtNotFoundOrInactive, null);
+        }
+
+        if (await HasOverlappingBooking(targetCourtId, targetStartDate, targetEndDate, id))
+        {
+            return (CourtBookingResult.Overlap, null);
+        }
+
+        booking.CourtId = targetCourtId;
+        booking.StartDate = targetStartDate;
+        booking.EndDate = targetEndDate;
+
+        await _context.SaveChangesAsync();
+
+        var responseDto = new BookingResponseDto(booking.Id, booking.PlayerId, booking.CourtId, booking.StartDate, booking.EndDate, booking.CreatedDate);
+        return new (CourtBookingResult.Success, responseDto);
     }
 
     public async Task<bool> CancelBookingAsync(int id)
@@ -143,5 +176,10 @@ public class CourtBookingsService : ICourtBookingsService
         _context.Bookings.Remove(booking);
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    private async Task<bool> HasOverlappingBooking(int targetCourtId, DateTime targetStartDate, DateTime targetEndDate, int? excludeBookingId = null)
+    {
+        return await _context.Bookings.AnyAsync(b => (!excludeBookingId.HasValue || b.Id != excludeBookingId.Value) && b.CourtId == targetCourtId && targetStartDate < b.EndDate && targetEndDate > b.StartDate);
     }
 }
